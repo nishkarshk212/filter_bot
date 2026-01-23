@@ -3,7 +3,8 @@ import asyncio
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+script_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(script_dir, '.env'))
 TOKEN = os.getenv("BOT_TOKEN")
 
 async def check():
