@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters as telegram_filters
 
-# Load environment variables
-load_dotenv()
+script_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(script_dir, '.env'))
 
 # Enable logging
 logging.basicConfig(
@@ -56,11 +56,13 @@ def make_filter_entry_from_message(msg, fallback_text=None):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Hi! I'm a filter bot.\n"
-        "Use /filter <trigger> <reply> to set a filter.\n"
-        "Use /filters to list them.\n"
-        "Use /stop <trigger> to delete one.\n"
-        "Use /stopall to delete all."
+        "Make your chat more lively with filters; The bot will reply to certain words!\n\n"
+        "Filters are case insensitive; every time someone says your trigger words, Rose will reply something else! can be used to create your own commands, if desired.\n\n"
+        "Commands :\n"
+        "- /filter <trigger> <reply>: Every time someone says \"trigger\", the bot will reply with \"sentence\". For multiple word filters, quote the trigger.\n"
+        "- /filters: List all chat filters.\n"
+        "- /stop <trigger>: Stop the bot from replying to \"trigger\".\n"
+        "- /stopall: Stop ALL  filters in the current chat. This cannot be undone."
     )
 
 async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -72,10 +74,14 @@ async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Error parsing arguments: {e}")
         return
     if len(parts) < 2:
-        await update.message.reply_text("Usage: /filter <trigger> <reply>\nOr reply to a message with: /filter <trigger>")
+        await update.message.reply_text(
+            "Usage: /filter <trigger> <reply>\n"
+            "For multiple word filters, quote the trigger.\n"
+            "Or reply to a message with: /filter <trigger>"
+        )
         return
     trigger = parts[1].lower()
-    reply = parts[2] if len(parts) >= 3 else None
+    reply = " ".join(parts[2:]) if len(parts) >= 3 else None
     if chat_id not in chat_filters:
         chat_filters[chat_id] = {}
     entry = None
@@ -151,25 +157,65 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     rtype = reply.get("type", "text")
                     data = reply.get("data", "")
                     if rtype == "text":
-                        await update.message.reply_text(data)
+                        await context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     elif rtype == "photo":
-                        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=data)
+                        await context.bot.send_photo(
+                            chat_id=update.effective_chat.id,
+                            photo=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     elif rtype == "sticker":
-                        await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker=data)
+                        await context.bot.send_sticker(
+                            chat_id=update.effective_chat.id,
+                            sticker=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     elif rtype == "video":
-                        await context.bot.send_video(chat_id=update.effective_chat.id, video=data)
+                        await context.bot.send_video(
+                            chat_id=update.effective_chat.id,
+                            video=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     elif rtype == "animation":
-                        await context.bot.send_animation(chat_id=update.effective_chat.id, animation=data)
+                        await context.bot.send_animation(
+                            chat_id=update.effective_chat.id,
+                            animation=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     elif rtype == "document":
-                        await context.bot.send_document(chat_id=update.effective_chat.id, document=data)
+                        await context.bot.send_document(
+                            chat_id=update.effective_chat.id,
+                            document=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     elif rtype == "voice":
-                        await context.bot.send_voice(chat_id=update.effective_chat.id, voice=data)
+                        await context.bot.send_voice(
+                            chat_id=update.effective_chat.id,
+                            voice=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     elif rtype == "audio":
-                        await context.bot.send_audio(chat_id=update.effective_chat.id, audio=data)
+                        await context.bot.send_audio(
+                            chat_id=update.effective_chat.id,
+                            audio=data,
+                            reply_to_message_id=update.message.message_id
+                        )
                     else:
-                        await update.message.reply_text(str(reply))
+                        await context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=str(reply),
+                            reply_to_message_id=update.message.message_id
+                        )
                 else:
-                    await update.message.reply_text(str(reply))
+                    await context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=str(reply),
+                        reply_to_message_id=update.message.message_id
+                    )
                 return
 
 if __name__ == '__main__':
