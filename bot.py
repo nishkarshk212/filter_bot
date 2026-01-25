@@ -111,7 +111,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
+async def is_user_admin_or_owner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check if user is admin, creator, or owner of the chat"""
+    try:
+        user_id = update.effective_user.id
+        chat_id = update.effective_chat.id
+        
+        # Get chat member status
+        chat_member = await context.bot.get_chat_member(chat_id, user_id)
+        
+        # Allow if user is creator (owner) or administrator (moderator)
+        if chat_member.status in ['creator', 'administrator']:
+            return True
+        
+        return False
+    except Exception as e:
+        logging.error(f"Error checking user permissions: {e}")
+        return False
+
 async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check permissions first
+    if not await is_user_admin_or_owner(update, context):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="❌ You don't have permission to manage filters. Only moderators and owners can use this command."
+        )
+        return
+    
     chat_id = str(update.effective_chat.id)
     text = update.message.text
     try:
@@ -161,6 +187,14 @@ async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def list_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check permissions first
+    if not await is_user_admin_or_owner(update, context):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="❌ You don't have permission to view filters. Only moderators and owners can use this command."
+        )
+        return
+    
     chat_id = str(update.effective_chat.id)
     if chat_id not in chat_filters or not chat_filters[chat_id]:
         await context.bot.send_message(
@@ -180,6 +214,14 @@ async def list_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def stop_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check permissions first
+    if not await is_user_admin_or_owner(update, context):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="❌ You don't have permission to remove filters. Only moderators and owners can use this command."
+        )
+        return
+    
     chat_id = str(update.effective_chat.id)
     text = update.message.text
     
@@ -215,6 +257,14 @@ async def stop_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def stop_all_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check permissions first
+    if not await is_user_admin_or_owner(update, context):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="❌ You don't have permission to remove all filters. Only moderators and owners can use this command."
+        )
+        return
+    
     chat_id = str(update.effective_chat.id)
     
     if chat_id in chat_filters:
